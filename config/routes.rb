@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     namespace :survey do
       resources :responses, only: [:show]
     end
+    resource :slack_uploads, only: [:show]
   end
 
   get '/api', to: 'api#index'
@@ -44,7 +45,14 @@ Rails.application.routes.draw do
           end
           resource :bulk_actions, only: [:create]
           resources :agents, only: [:index, :create, :update, :destroy]
-          resources :agent_bots, only: [:index, :create, :show, :update, :destroy]
+          resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
+            delete :avatar, on: :member
+          end
+          resources :contact_inboxes, only: [] do
+            collection do
+              post :filter
+            end
+          end
           resources :assignable_agents, only: [:index]
           resource :audit_logs, only: [:show]
           resources :callbacks, only: [] do
@@ -78,6 +86,7 @@ Rails.application.routes.draw do
               resources :messages, only: [:index, :create, :destroy] do
                 member do
                   post :translate
+                  post :retry
                 end
               end
               resources :assignments, only: [:create]
@@ -160,10 +169,13 @@ Rails.application.routes.draw do
             end
           end
 
-          resources :notifications, only: [:index, :update] do
+          resources :notifications, only: [:index, :update, :destroy] do
             collection do
               post :read_all
               get :unread_count
+            end
+            member do
+              post :snooze
             end
           end
           resource :notification_settings, only: [:show, :update]
@@ -211,18 +223,19 @@ Rails.application.routes.draw do
             member do
               patch :archive
               put :add_members
+              delete :logo
             end
             resources :categories
             resources :articles do
               post :reorder, on: :collection
             end
           end
+
+          resources :upload, only: [:create]
         end
       end
       # end of account scoped api routes
       # ----------------------------------
-
-      resources :upload, only: [:create]
 
       namespace :integrations do
         resources :webhooks, only: [:create]
@@ -318,7 +331,9 @@ Rails.application.routes.draw do
             get :login
           end
         end
-        resources :agent_bots, only: [:index, :create, :show, :update, :destroy]
+        resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
+          delete :avatar, on: :member
+        end
         resources :accounts, only: [:create, :show, :update, :destroy] do
           resources :account_users, only: [:index, :create] do
             collection do
@@ -390,6 +405,7 @@ Rails.application.routes.draw do
 
   namespace :twilio do
     resources :callback, only: [:create]
+    resources :delivery_status, only: [:create]
   end
 
   get 'microsoft/callback', to: 'microsoft/callbacks#show'
@@ -423,12 +439,19 @@ Rails.application.routes.draw do
       end
 
       resources :access_tokens, only: [:index, :show]
+      resources :response_sources, only: [:index, :show, :new, :create, :edit, :update, :destroy]
+      resources :response_documents, only: [:index, :show, :new, :create, :edit, :update, :destroy]
+      resources :responses, only: [:index, :show, :new, :create, :edit, :update, :destroy]
       resources :installation_configs, only: [:index, :new, :create, :show, :edit, :update]
       resources :agent_bots, only: [:index, :new, :create, :show, :edit, :update] do
         delete :avatar, on: :member, action: :destroy_avatar
       end
       resources :platform_apps, only: [:index, :new, :create, :show, :edit, :update]
       resource :instance_status, only: [:show]
+
+      resource :settings, only: [:show] do
+        get :refresh, on: :collection
+      end
 
       # resources that doesn't appear in primary navigation in super admin
       resources :account_users, only: [:new, :create, :destroy]
