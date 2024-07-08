@@ -5,15 +5,10 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-      args:
-        BUNDLE_WITHOUT: ''
-        EXECJS_RUNTIME: 'Disabled'
-        RAILS_ENV: 'production'
-        RAILS_SERVE_STATIC_FILES: 'false'
-    tty: true
-    stdin_open: true
-    image: chatwoot:production
+    image: govchat:production
     env_file: .env
+    volumes:
+      - /data/storage:/app/storage
   rails:
     <<: *base
     ports:
