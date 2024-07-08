@@ -7,7 +7,7 @@ services:
       dockerfile: ./docker/Dockerfile
       args:
         BUNDLE_WITHOUT: ''
-        EXECJS_RUNTIME: 'Node'
+        EXECJS_RUNTIME: 'Disabled'
         RAILS_ENV: 'production'
         RAILS_SERVE_STATIC_FILES: 'false'
     tty: true
